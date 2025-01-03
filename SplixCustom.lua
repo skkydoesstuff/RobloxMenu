@@ -368,7 +368,7 @@ function library:new(props)
 				["TextColor3"] = {}
 			}
 		},
-		["setSize"] = setSize()
+		["setSize"] = setSize
 	}
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
