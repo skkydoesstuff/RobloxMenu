@@ -156,6 +156,7 @@ function library:new(props)
 	syn.protect_gui(screen)
         end
 	-- 1
+
 	local outline = utility.new(
     		"Frame",
     		{
@@ -324,6 +325,21 @@ function library:new(props)
 	--
 	utility.dragify(title,outline)
 	-- // window tbl
+
+	local function setSize(vec) 
+		if window.outline then
+			window.outline.Size = UDim2.new(0, vec.X, 0, vec.Y)
+			
+			if window.outline2 then
+				window.outline2.Size = UDim2.new(1, -4, 1, -4)
+			end
+			
+			if window.tabs then
+				window.tabs.Size = UDim2.new(1, 0, 1, -20)
+			end
+		end
+	end
+
 	window = {
 		["screen"] = screen,
 		["holder"] = holder,
@@ -351,7 +367,8 @@ function library:new(props)
 				["BorderColor3"] = {},
 				["TextColor3"] = {}
 			}
-		}
+		},
+		["setSize"] = setSize()
 	}
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
