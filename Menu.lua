@@ -132,3 +132,8 @@ generalJump:Slider({
 })
 
 window:Initialize()
+
+player.CharacterRemoving:Connect(function()
+    speedToggled = false
+    jumpToggled = false
+end)
