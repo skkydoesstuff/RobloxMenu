@@ -182,6 +182,8 @@ generalNoclip:Toggle({
     end
 })
 
+print(window.keybindslist:Visibility())
+
 window:Initialize()
 
 player.CharacterRemoving:Connect(function()
