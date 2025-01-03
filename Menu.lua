@@ -1,7 +1,5 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/skkydoesstuff/RobloxMenu/refs/heads/main/SplixCustom.lua"))()
-local window = library:new({textsize = 13.5,font = Enum.Font.RobotoMono,name = "Skkys Gui",color = Color3.fromRGB(225,58,81), size = Vector2.new(600, 1000)})
-
-window.setSize(Vector2.new(600, 1000))
+local window = library:new({textsize = 13.5,font = Enum.Font.RobotoMono,name = "Skkys Gui",color = Color3.fromRGB(225,58,81)})
 
 local tab = window:page({name = "General"})
 
@@ -11,24 +9,46 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 local h = char:WaitForChild("Humanoid")
 
 local LocalPlayerSection = tab:section({name = "Local Player",side = "left",size = 250})
-local LocalPlayerSection2 = tab:section({name = "Local Player2",side = "left",size = 250})
-local LocalPlayerSection3 = tab:section({name = "Local Player3",side = "left",size = 250})
 
 local defaultWalkSpeed = h.WalkSpeed
 local defaultJumpHeight = h.JumpHeight
 
 local speedToggleEnabled = false
 local speedEnabled = false
-local speed = defaultWalkSpeed
+local speedVal = defaultWalkSpeed
 
 local jumpToggleEnabled = false
 local jumpEnabled = false
-local jumpHeight = defaultJumpHeight
+local jumpVal = defaultJumpHeight
 
 local noclipToggleEnabled = false
 local noclipEnabled = false
 
-LocalPlayerSection:toggle({name = "Speed",def = false,callback = function(value)
+local function setSpeed(val)
+    h.Walkspeed = val
+end
 
+local function setJumpHeight(val)
+    h.JumpHeight = val
+end
+
+LocalPlayerSection:toggle({name = "Speed",def = false,callback = function(value)
+    speedToggleEnabled = value
+    if not value then
+        speedEnabled = false
+    end
+end})
+:keybind({name = "speed",def = nil,callback = function(value)
+    if not speedToggleEnabled then return end
+    speedEnabled = value
+    if speedEnabled then
+        setSpeed(speedVal)
+    else
+        setSpeed(defaultWalkSpeed)
+    end
 end})
 
+LocalPlayerSection:slider({name = "Amount", def = defaultWalkSpeed, min = defaultWalkSpeed, max = 1000, callback = function(val) 
+    speedVal = val
+    if speedEnabled then setSpeed(speedVal) end
+end})
