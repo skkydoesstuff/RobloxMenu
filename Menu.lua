@@ -11,27 +11,50 @@ local settingsSection = tab:section({name = "Settings", side = "right", size = 2
 local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
-local h = char:WaitForChild("Humanoid")
+local humanoid = char:WaitForChild("Humanoid")
 
 local speedEnabled = false
 local defaultMultiplier = 0.5
 local walkSpeedMultiplier = defaultMultiplier
 
+local infiniteJumpEnabled = false
+
+local userInputService = game:GetService("UserInputService")
+
 local function handleSpeed(dt)
-    if speedEnabled then
-        local moveDirection = char.Humanoid.MoveDirection
-        if moveDirection.Magnitude > 0 then
-            hrp.CFrame = hrp.CFrame + (moveDirection * walkSpeedMultiplier * dt)
-        end
+    local moveDirection = char.Humanoid.MoveDirection
+    if moveDirection.Magnitude > 0 then
+        hrp.CFrame = hrp.CFrame + (moveDirection * walkSpeedMultiplier * dt)
     end
 end
 
-local speedToggle = generalSection:keybind({name = "Toggle Speed Keybind", def = nil, callback = function(value)
-        speedEnabled = value
-    end,
+local function enableInfiniteJump()
+    userInputService.JumpRequest:Connect(function()
+        if infiniteJumpEnabled then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+end
 
+local function toggleInfiniteJump()
+    infiniteJumpEnabled = not infiniteJumpEnabled
+end
+
+local infiniteJumpToggle = generalSection:keybind({
+    name = "Toggle Infinite Jump Keybind",
+    def = nil,
+    callback = function() end,
     onPressCallback = function()
-        speedEnabled = not speedEnabled 
+        toggleInfiniteJump()
+    end
+})
+
+local speedToggle = generalSection:keybind({
+    name = "Toggle Speed Keybind",
+    def = nil,  -- Define default key if needed
+    callback = function() end,
+    onPressCallback = function()
+        speedEnabled = not speedEnabled
     end
 })
 
@@ -45,16 +68,25 @@ generalSection:slider({
     end
 })
 
--- Main function
+local MenuKeybind = settingsSection:keybind({
+    name = "Toggle Menu Keybind",
+    def = nil,  -- Define default key if needed
+    callback = function(key)
+        window.key = key
+    end,
+})
 
 rs.Stepped:Connect(function(_, dt)
-    handleSpeed(dt)
+    if speedEnabled then
+        handleSpeed(dt)
+    end
 end)
-
--- Set player variables
 
 player.CharacterAdded:Connect(function(character)
     char = character
     hrp = char:WaitForChild("HumanoidRootPart")
-    h = char:WaitForChild("Humanoid")
+    humanoid = char:WaitForChild("Humanoid")
+    enableInfiniteJump()
 end)
+
+enableInfiniteJump()  -- Enable infinite jump for the current character
