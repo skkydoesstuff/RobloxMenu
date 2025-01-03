@@ -29,6 +29,10 @@ local function setSpeed(amount)
     end
 end
 
+mainSection:keybind({name = "set ui keybind",def = nil,callback = function(key)
+    window.key = key
+ end})
+
 local function setJump(amount)
     if humanoid then
         humanoid.JumpHeight = amount
