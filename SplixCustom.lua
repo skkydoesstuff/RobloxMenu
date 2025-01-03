@@ -3313,44 +3313,51 @@ function sections:keybind(props)
     end
     --
     uis.InputBegan:Connect(function(Input)
-        print("InputBegan triggered")
-        if keybind.down then
-            if Input.UserInputType == Enum.UserInputType.Keyboard then
-                local capd = utility.capatalize(Input.KeyCode.Name)
-                if #capd > 1 then
-                    value.Text = capd
-                else
-                    value.Text = Input.KeyCode.Name
-                end
-                turn("KeyCode", Input.KeyCode)
-                callback(Input.KeyCode)
-            end
-            if allowed == 1 then
-                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    value.Text = "MB1"
-                    turn("UserInputType", Input)
-                    callback(Input)
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    value.Text = "MB2"
-                    turn("UserInputType", Input)
-                    callback(Input)
-                elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
-                    value.Text = "MB3"
-                    turn("UserInputType", Input)
-                    callback(Input)
-                end
-            end
-        end
-
-        -- Trigger the additional callback when the keybind is pressed
-        print("Checking if onPressCallback should be triggered")
-        if keybind.current[2] == Input.UserInputType or keybind.current[2] == Input.KeyCode then
-            print("onPressCallback triggered")
-            if keybind.onPressCallback then
-                keybind.onPressCallback()
-            end
-        end
-    end)
+		print("InputBegan triggered")
+		
+		if keybind.down then
+			if Input.UserInputType == Enum.UserInputType.Keyboard then
+				local capd = utility.capatalize(Input.KeyCode.Name)
+				if #capd > 1 then
+					value.Text = capd
+				else
+					value.Text = Input.KeyCode.Name
+				end
+				turn("KeyCode", Input.KeyCode)
+				callback(Input.KeyCode)
+			end
+			if allowed == 1 then
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+					value.Text = "MB1"
+					turn("UserInputType", Input)
+					callback(Input)
+				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+					value.Text = "MB2"
+					turn("UserInputType", Input)
+					callback(Input)
+				elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
+					value.Text = "MB3"
+					turn("UserInputType", Input)
+					callback(Input)
+				end
+			end
+		end
+	
+		-- Debug prints to inspect the values
+		print("keybind.current[2]:", keybind.current[2])
+		print("Input.UserInputType:", Input.UserInputType)
+		print("Input.KeyCode:", Input.KeyCode)
+		
+		-- Trigger the additional callback when the keybind is pressed
+		print("Checking if onPressCallback should be triggered")
+		if keybind.current[2] == Input.UserInputType or keybind.current[2] == Input.KeyCode then
+			print("onPressCallback triggered")
+			if keybind.onPressCallback then
+				keybind.onPressCallback()
+			end
+		end
+	end)
+	
     --
     local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
     --
