@@ -3314,7 +3314,9 @@ function sections:keybind(props)
     --
     uis.InputBegan:Connect(function(Input)
 		print("InputBegan triggered")
-		
+		print("keybind.current[2]:", keybind.current[2])
+		print("Input.UserInputType:", Input.UserInputType)
+		print("Input.KeyCode:", Input.KeyCode)
 		if keybind.down then
 			if Input.UserInputType == Enum.UserInputType.Keyboard then
 				local capd = utility.capatalize(Input.KeyCode.Name)
@@ -3344,9 +3346,7 @@ function sections:keybind(props)
 		end
 	
 		-- Debug prints to inspect the values
-		print("keybind.current[2]:", keybind.current[2])
-		print("Input.UserInputType:", Input.UserInputType)
-		print("Input.KeyCode:", Input.KeyCode)
+		
 		
 		-- Trigger the additional callback when the keybind is pressed
 		print("Checking if onPressCallback should be triggered")
