@@ -7,9 +7,8 @@ local settingsPage = window:Page({Name = "Settings"})
 
 local mainSection = mainPage:Section({Name = "Main", Side = "Left"})
 
-local generalSpeed, generalJump = mainPage:MultiSection({Sections = {"Speed", "Jump"}, Side = "Left", Size = 200})
+local generalSpeed, generalJump, generalNoclip = mainPage:MultiSection({Sections = {"Speed", "Jump", "Noclip"}, Side = "Left", Size = 200})
 local settingsMain = settingsPage:Section({Name = "Main", Side = "Left"})
-
 local player = game.Players.LocalPlayer
 local char, humanoid, hrp
 
@@ -33,6 +32,26 @@ end
 local function setJump(amount)
     if humanoid then
         humanoid.JumpHeight = amount
+    end
+end
+
+local function noclip()
+    if char then
+        for i,v in pairs(char:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end
+
+local function clip()
+    if char then
+        for i,v in pairs(char:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
     end
 end
 
@@ -128,6 +147,38 @@ generalJump:Slider({
     Callback = function(num)
         jump = num
         if jumpToggled then setJump(jump) end
+    end
+})
+
+-- noclip
+
+local noclipEnabled = false
+local noclipToggled = false
+
+generalNoclip:Toggle({
+    Name = "Enabled",
+    Default = false,
+    Pointer = "Noclip_Enabled",
+    Callback = function(bool)
+        noclipEnabled = bool
+        if not bool then noclipToggled = false end
+    end
+})
+
+:Keybind({
+    Default = Enum.KeyCode.X,
+    Name = "Noclip",
+    Mode = "Toggle",
+    Pointer = "Noclip_Bind",
+    Callback = function()
+        if noclipEnabled then
+            noclipToggled = not noclipToggled
+            if noclipToggled then
+                noclip()
+            else
+                clip()
+            end
+        end
     end
 })
 
