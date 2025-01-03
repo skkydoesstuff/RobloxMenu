@@ -327,6 +327,36 @@ function library:new(props)
 	-- // window tbl
 
 	
+
+	window = {
+		["screen"] = screen,
+		["holder"] = holder,
+		["labels"] = {},
+		["tabs"] = outline4,
+		["tabsbuttons"] = tabsbuttons,
+		["outline"] = outline,
+		["pages"] = {},
+		["pointers"] = {},
+		["dropdowns"] = {},
+		["multiboxes"] = {},
+		["buttonboxs"] = {},
+		["colorpickers"] = {},
+		["x"] = true,
+		["y"] = true,
+		["key"] = Enum.KeyCode.RightShift,
+		["textsize"] = textsize,
+		["font"] = font,
+		["theme"] = {
+			["accent"] = color
+		},
+		["themeitems"] = {
+			["accent"] = {
+				["BackgroundColor3"] = {},
+				["BorderColor3"] = {},
+				["TextColor3"] = {}
+			}
+		}
+	}
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
 	--
@@ -388,6 +418,7 @@ function library:new(props)
 	window.labels[#window.labels+1] = titletext
 	-- // metatable indexing + return
 	setmetatable(window, library)
+	
 	local function setSize(vec) 
 		if window.outline then
 			window.outline.Size = UDim2.new(0, vec.X, 0, vec.Y)
@@ -401,37 +432,7 @@ function library:new(props)
 			end
 		end
 	end
-
-	window = {
-		["screen"] = screen,
-		["holder"] = holder,
-		["labels"] = {},
-		["tabs"] = outline4,
-		["tabsbuttons"] = tabsbuttons,
-		["outline"] = outline,
-		["pages"] = {},
-		["pointers"] = {},
-		["dropdowns"] = {},
-		["multiboxes"] = {},
-		["buttonboxs"] = {},
-		["colorpickers"] = {},
-		["x"] = true,
-		["y"] = true,
-		["key"] = Enum.KeyCode.RightShift,
-		["textsize"] = textsize,
-		["font"] = font,
-		["theme"] = {
-			["accent"] = color
-		},
-		["themeitems"] = {
-			["accent"] = {
-				["BackgroundColor3"] = {},
-				["BorderColor3"] = {},
-				["TextColor3"] = {}
-			}
-		},
-		["setSize"] = setSize
-	}
+	window["setSize"] = setSize
 	return window
 end
 --
