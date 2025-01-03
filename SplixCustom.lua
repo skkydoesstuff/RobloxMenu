@@ -3279,7 +3279,6 @@ function sections:keybind(props)
     }
     --
     button.MouseButton1Down:Connect(function()
-        print("MouseButton1Down triggered")
         if keybind.down == false then
             outline.BorderColor3 = self.library.theme.accent
             table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
@@ -3289,7 +3288,6 @@ function sections:keybind(props)
     end)
     --
     button.MouseButton2Down:Connect(function()
-        print("MouseButton2Down triggered")
         keybind.down = false
         keybind.current = {nil,nil}
         outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
@@ -3302,9 +3300,6 @@ function sections:keybind(props)
     end)
     --
     local function turn(typeis, current)
-		print("In turn function")
-		print("typeis:", typeis)
-		print("current:", current)
 	
 		-- Update keybind.current with the correct values
 		keybind.current = {typeis, current}
@@ -3320,7 +3315,6 @@ function sections:keybind(props)
 	
     --
     uis.InputBegan:Connect(function(Input)
-		print("InputBegan triggered")
 		
 		if keybind.down then
 			if Input.UserInputType == Enum.UserInputType.Keyboard then
@@ -3350,15 +3344,11 @@ function sections:keybind(props)
 			end
 		end
 	
-		-- Debug prints to inspect the values
-		print("keybind.current[2]:", keybind.current[2])
-		print("Input.UserInputType:", Input.UserInputType)
-		print("Input.KeyCode:", Input.KeyCode)
+		-- Deb
 		
 		-- Trigger the additional callback when the keybind is pressed
-		print("Checking if onPressCallback should be triggered")
 		if keybind.current[2] == Input.UserInputType or keybind.current[2] == Input.KeyCode then
-			print("onPressCallback triggered")
+
 			if keybind.onPressCallback then
 				keybind.onPressCallback()
 			end
