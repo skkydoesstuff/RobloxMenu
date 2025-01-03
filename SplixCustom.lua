@@ -3121,246 +3121,252 @@ function textboxs:set(value)
 end
 --
 function sections:keybind(props)
-	-- // properties
-	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
-	local def = props.def or props.Def or props.default or props.Default or nil
-	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
-	local onPressCallback = props.onPressCallback or props.OnPressCallback or function()end -- Added property
-	local allowed = props.allowed or props.Allowed or 1
-	--
-	local default = ".."
-	local typeis = nil
-	--
-	if typeof(def) == "EnumItem" then
-		if def == Enum.UserInputType.MouseButton1 then
-			if allowed == 1 then
-				default = "MB1"
-				typeis = "UserInputType"
-			end
-		elseif def == Enum.UserInputType.MouseButton2 then
-			if allowed == 1 then
-				default = "MB2"
-				typeis = "UserInputType"
-			end
-		elseif def == Enum.UserInputType.MouseButton3 then
-			if allowed == 1 then
-				default = "MB3"
-				typeis = "UserInputType"
-			end
-		else
-			local capd = utility.capatalize(def.Name)
-			if #capd > 1 then
-				default = capd
-			else
-				default = def.Name
-			end
-			typeis = "KeyCode"
-		end
-	end
-	-- // variables
-	local keybind = {}
-	-- // main
-	local keybindholder = utility.new(
-		"Frame",
-		{
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,0,17),
-			Parent = self.content
-		}
-	)
-	--
-	local outline = utility.new(
-		"Frame",
-		{
-			AnchorPoint = Vector2.new(1,0),
-			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
-			BorderMode = "Inset",
-			BorderSizePixel = 1,
-			Size = UDim2.new(0,40,1,0),
-			Position = UDim2.new(1,0,0,0),
-			Parent = keybindholder
-		}
-	)
-	--
-	local outline2 = utility.new(
-		"Frame",
-		{
-			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
-			BorderColor3 = Color3.fromRGB(56, 56, 56),
-			BorderMode = "Inset",
-			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
-			Parent = outline
-		}
-	)
-	--
-	local value = utility.new(
-		"TextLabel",
-		{
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
-			Font = self.library.font,
-			Text = default,
-			TextColor3 = Color3.fromRGB(255,255,255),
-			TextSize = self.library.textsize,
-			TextStrokeTransparency = 0,
-			TextXAlignment = "Center",
-			Parent = outline
-		}
-	)
-	--
-	outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
-	--
-	local color = utility.new(
-		"Frame",
-		{
-			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-			BorderSizePixel = 0,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
-			Parent = outline2
-		}
-	)
-	--
-	utility.new(
-		"UIGradient",
-		{
-			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
-			Rotation = 90,
-			Parent = color
-		}
-	)
-	--
-	local button = utility.new(
-		"TextButton",
-		{
-			AnchorPoint = Vector2.new(0,0),
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
-			Text = "",
-			TextColor3 = Color3.fromRGB(255,255,255),
-			TextSize = self.library.textsize,
-			TextStrokeTransparency = 0,
-			Font = self.library.font,
-			Parent = keybindholder
-		}
-	)
-	--
-	local title = utility.new(
-		"TextLabel",
-		{
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
-			Font = self.library.font,
-			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
-			TextSize = self.library.textsize,
-			TextStrokeTransparency = 0,
-			TextXAlignment = "Left",
-			Parent = keybindholder
-		}
-	)
-	-- // keybind tbl
-	keybind = {
-		["library"] = self.library,
-		["down"] = false,
-		["outline"] = outline,
-		["value"] = value,
-		["allowed"] = allowed,
-		["current"] = {typeis, utility.splitenum(def)},
-		["pressed"] = false,
-		["callback"] = callback,
-		["onPressCallback"] = onPressCallback, -- Store the new callback
-	}
-	--
-	button.MouseButton1Down:Connect(function()
-		if keybind.down == false then
-			outline.BorderColor3 = self.library.theme.accent
-			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
-			wait()
-			keybind.down = true
-		end
-	end)
-	--
-	button.MouseButton2Down:Connect(function()
-		keybind.down = false
-		keybind.current = {nil,nil}
-		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
-		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
-		if find then
-			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
-		end
-		value.Text = ".."
-		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
-	end)
-	--
-	local function turn(typeis,current)
-		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
-		keybind.down = false
-		keybind.current = {typeis,utility.splitenum(current)}
-		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
-		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
-		if find then
-			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
-		end
-	end
-	--
-	uis.InputBegan:Connect(function(Input)
-		if keybind.down then
-			if Input.UserInputType == Enum.UserInputType.Keyboard then
-				local capd = utility.capatalize(Input.KeyCode.Name)
-				if #capd > 1 then
-					value.Text = capd
-				else
-					value.Text = Input.KeyCode.Name
-				end
-				turn("KeyCode", Input.KeyCode)
-				callback(Input.KeyCode)
-			end
-			if allowed == 1 then
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-					value.Text = "MB1"
-					turn("UserInputType", Input)
-					callback(Input)
-				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
-					value.Text = "MB2"
-					turn("UserInputType", Input)
-					callback(Input)
-				elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
-					value.Text = "MB3"
-					turn("UserInputType", Input)
-					callback(Input)
-				end
-			end
-		end
+    -- // properties
+    local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
+    local def = props.def or props.Def or props.default or props.Default or nil
+    local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
+    local onPressCallback = props.onPressCallback or props.OnPressCallback or function()end -- Added property
+    local allowed = props.allowed or props.Allowed or 1
+    --
+    local default = ".."
+    local typeis = nil
+    --
+    if typeof(def) == "EnumItem" then
+        if def == Enum.UserInputType.MouseButton1 then
+            if allowed == 1 then
+                default = "MB1"
+                typeis = "UserInputType"
+            end
+        elseif def == Enum.UserInputType.MouseButton2 then
+            if allowed == 1 then
+                default = "MB2"
+                typeis = "UserInputType"
+            end
+        elseif def == Enum.UserInputType.MouseButton3 then
+            if allowed == 1 then
+                default = "MB3"
+                typeis = "UserInputType"
+            end
+        else
+            local capd = utility.capatalize(def.Name)
+            if #capd > 1 then
+                default = capd
+            else
+                default = def.Name
+            end
+            typeis = "KeyCode"
+        end
+    end
+    -- // variables
+    local keybind = {}
+    -- // main
+    local keybindholder = utility.new(
+        "Frame",
+        {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1,0,0,17),
+            Parent = self.content
+        }
+    )
+    --
+    local outline = utility.new(
+        "Frame",
+        {
+            AnchorPoint = Vector2.new(1,0),
+            BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+            BorderColor3 = Color3.fromRGB(12, 12, 12),
+            BorderMode = "Inset",
+            BorderSizePixel = 1,
+            Size = UDim2.new(0,40,1,0),
+            Position = UDim2.new(1,0,0,0),
+            Parent = keybindholder
+        }
+    )
+    --
+    local outline2 = utility.new(
+        "Frame",
+        {
+            BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+            BorderColor3 = Color3.fromRGB(56, 56, 56),
+            BorderMode = "Inset",
+            BorderSizePixel = 1,
+            Size = UDim2.new(1,0,1,0),
+            Position = UDim2.new(0,0,0,0),
+            Parent = outline
+        }
+    )
+    --
+    local value = utility.new(
+        "TextLabel",
+        {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1,0,1,0),
+            Position = UDim2.new(0,0,0,0),
+            Font = self.library.font,
+            Text = default,
+            TextColor3 = Color3.fromRGB(255,255,255),
+            TextSize = self.library.textsize,
+            TextStrokeTransparency = 0,
+            TextXAlignment = "Center",
+            Parent = outline
+        }
+    )
+    --
+    outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+    --
+    local color = utility.new(
+        "Frame",
+        {
+            BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1,0,1,0),
+            Position = UDim2.new(0,0,0,0),
+            Parent = outline2
+        }
+    )
+    --
+    utility.new(
+        "UIGradient",
+        {
+            Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+            Rotation = 90,
+            Parent = color
+        }
+    )
+    --
+    local button = utility.new(
+        "TextButton",
+        {
+            AnchorPoint = Vector2.new(0,0),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1,0,1,0),
+            Position = UDim2.new(0,0,0,0),
+            Text = "",
+            TextColor3 = Color3.fromRGB(255,255,255),
+            TextSize = self.library.textsize,
+            TextStrokeTransparency = 0,
+            Font = self.library.font,
+            Parent = keybindholder
+        }
+    )
+    --
+    local title = utility.new(
+        "TextLabel",
+        {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1,0,1,0),
+            Position = UDim2.new(0,0,0,0),
+            Font = self.library.font,
+            Text = name,
+            TextColor3 = Color3.fromRGB(255,255,255),
+            TextSize = self.library.textsize,
+            TextStrokeTransparency = 0,
+            TextXAlignment = "Left",
+            Parent = keybindholder
+        }
+    )
+    -- // keybind tbl
+    keybind = {
+        ["library"] = self.library,
+        ["down"] = false,
+        ["outline"] = outline,
+        ["value"] = value,
+        ["allowed"] = allowed,
+        ["current"] = {typeis, utility.splitenum(def)},
+        ["pressed"] = false,
+        ["callback"] = callback,
+        ["onPressCallback"] = onPressCallback, -- Store the new callback
+    }
+    --
+    button.MouseButton1Down:Connect(function()
+        print("MouseButton1Down triggered")
+        if keybind.down == false then
+            outline.BorderColor3 = self.library.theme.accent
+            table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+            wait()
+            keybind.down = true
+        end
+    end)
+    --
+    button.MouseButton2Down:Connect(function()
+        print("MouseButton2Down triggered")
+        keybind.down = false
+        keybind.current = {nil,nil}
+        outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+        local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+        if find then
+            table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+        end
+        value.Text = ".."
+        outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+    end)
+    --
+    local function turn(typeis,current)
+        outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+        keybind.down = false
+        keybind.current = {typeis,utility.splitenum(current)}
+        outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+        local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+        if find then
+            table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+        end
+    end
+    --
+    uis.InputBegan:Connect(function(Input)
+        print("InputBegan triggered")
+        if keybind.down then
+            if Input.UserInputType == Enum.UserInputType.Keyboard then
+                local capd = utility.capatalize(Input.KeyCode.Name)
+                if #capd > 1 then
+                    value.Text = capd
+                else
+                    value.Text = Input.KeyCode.Name
+                end
+                turn("KeyCode", Input.KeyCode)
+                callback(Input.KeyCode)
+            end
+            if allowed == 1 then
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    value.Text = "MB1"
+                    turn("UserInputType", Input)
+                    callback(Input)
+                elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+                    value.Text = "MB2"
+                    turn("UserInputType", Input)
+                    callback(Input)
+                elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
+                    value.Text = "MB3"
+                    turn("UserInputType", Input)
+                    callback(Input)
+                end
+            end
+        end
 
-		-- Trigger the additional callback when the keybind is pressed
-		if keybind.current[2] == Input.UserInputType or keybind.current[2] == Input.KeyCode then
-			if keybind.onPressCallback then
-				keybind.onPressCallback()
-			end
-		end
-	end)
-	--
-	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
-	--
-	if pointer then
-		if self.pointers then
-			self.pointers[tostring(pointer)] = keybind
-		end
-	end
-	--
-	self.library.labels[#self.library.labels+1] = title
-	self.library.labels[#self.library.labels+1] = value
-	-- // metatable indexing + return
-	setmetatable(keybind, keybinds)
-	return keybind
+        -- Trigger the additional callback when the keybind is pressed
+        print("Checking if onPressCallback should be triggered")
+        if keybind.current[2] == Input.UserInputType or keybind.current[2] == Input.KeyCode then
+            print("onPressCallback triggered")
+            if keybind.onPressCallback then
+                keybind.onPressCallback()
+            end
+        end
+    end)
+    --
+    local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
+    --
+    if pointer then
+        if self.pointers then
+            self.pointers[tostring(pointer)] = keybind
+        end
+    end
+    --
+    self.library.labels[#self.library.labels+1] = title
+    self.library.labels[#self.library.labels+1] = value
+    -- // metatable indexing + return
+    setmetatable(keybind, keybinds)
+    return keybind
 end
+
 --
 function keybinds:set(key)
 	if key then
