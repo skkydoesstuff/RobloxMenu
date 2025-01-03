@@ -3301,22 +3301,27 @@ function sections:keybind(props)
         outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
     end)
     --
-    local function turn(typeis,current)
-        outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
-        keybind.down = false
-        keybind.current = {typeis,utility.splitenum(current)}
-        outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
-        local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
-        if find then
-            table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
-        end
-    end
+    local function turn(typeis, current)
+		print("In turn function")
+		print("typeis:", typeis)
+		print("current:", current)
+	
+		-- Update keybind.current with the correct values
+		keybind.current = {typeis, current}
+	
+		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+		keybind.down = false
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+	end
+	
     --
     uis.InputBegan:Connect(function(Input)
 		print("InputBegan triggered")
-		print("keybind.current[2]:", keybind.current[2])
-		print("Input.UserInputType:", Input.UserInputType)
-		print("Input.KeyCode:", Input.KeyCode)
+		
 		if keybind.down then
 			if Input.UserInputType == Enum.UserInputType.Keyboard then
 				local capd = utility.capatalize(Input.KeyCode.Name)
@@ -3346,7 +3351,9 @@ function sections:keybind(props)
 		end
 	
 		-- Debug prints to inspect the values
-		
+		print("keybind.current[2]:", keybind.current[2])
+		print("Input.UserInputType:", Input.UserInputType)
+		print("Input.KeyCode:", Input.KeyCode)
 		
 		-- Trigger the additional callback when the keybind is pressed
 		print("Checking if onPressCallback should be triggered")
@@ -3356,7 +3363,7 @@ function sections:keybind(props)
 				keybind.onPressCallback()
 			end
 		end
-	end)
+	end)	
 	
     --
     local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
