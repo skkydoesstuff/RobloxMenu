@@ -9,6 +9,7 @@ local tab = window:page({name = "YES2"})
 local generalSection = tab:section({name = "General", side = "left", size = 250})
 local settingsSection = tab:section({name = "Settings", side = "right", size = 250})
 
+local players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
@@ -23,6 +24,8 @@ local partFlyEnabled = false
 local partFlySpeed = 10
 local moveDirection = Vector3.new(0, 0, 0)
 local safetyPart = nil
+
+local espEnabled = false
 
 local partFolder = Instance.new("Folder")
 partFolder.Name = "PartFolder"
@@ -107,6 +110,8 @@ local function startPartFly()
     end
 end
 
+local espObjects = {}
+
 local function stopPartFly()
     if safetyPart then
         safetyPart:Destroy()
@@ -125,6 +130,76 @@ local function stopPartFly()
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
+        end
+    end
+end
+
+local function updateESP()
+    for i, v in pairs(players:GetChildren()) do
+        if v.Character and v.Character:FindFirstChild("Head") then
+            if not espObjects[v] then
+                -- Create the Highlight
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "ESP"
+                highlight.Parent = v.Character
+                highlight.Adornee = v.Character
+                highlight.FillTransparency = 0.5  -- You can adjust transparency if needed
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- Color of the highlight
+                
+                -- Create the BillboardGui
+                local billboardGui = Instance.new("BillboardGui")
+                billboardGui.Name = "PlayerLabel"
+                billboardGui.Size = UDim2.new(0, 200, 0, 50)  -- Adjust size as needed
+                billboardGui.StudsOffset = Vector3.new(0, 2, 0)  -- Adjust height above head
+                billboardGui.Adornee = v.Character:WaitForChild("Head")
+                billboardGui.AlwaysOnTop = true
+                
+                -- Create the TextLabel
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Name = "Label"
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.Text = v.Name  -- You can change this to display different text
+                textLabel.TextColor3 = Color3.new(1, 1, 1)  -- White text
+                textLabel.TextScaled = true
+                textLabel.Font = Enum.Font.GothamBold
+                textLabel.Parent = billboardGui
+                
+                -- Parent the BillboardGui to the Player's Head
+                billboardGui.Parent = v.Character:WaitForChild("Head")
+                
+                -- Store the ESP objects to prevent recreating them
+                espObjects[v] = {highlight = highlight, billboardGui = billboardGui}
+            end
+        end
+    end
+end
+
+local function removeESP(playerToRemove)
+    if playerToRemove then
+        -- Remove ESP for the specific player
+        local esp = espObjects[playerToRemove]
+        if esp then
+            -- Destroy the Highlight and BillboardGui
+            if esp.highlight then
+                esp.highlight:Destroy()
+            end
+            if esp.billboardGui then
+                esp.billboardGui:Destroy()
+            end
+            -- Remove the player from espObjects table
+            espObjects[playerToRemove] = nil
+        end
+    else
+        -- Remove ESP for all players
+        for player, esp in pairs(espObjects) do
+            if esp.highlight then
+                esp.highlight:Destroy()
+            end
+            if esp.billboardGui then
+                esp.billboardGui:Destroy()
+            end
+            espObjects[player] = nil
         end
     end
 end
@@ -172,6 +247,18 @@ generalSection:slider({
     end
 })
 
+generalSection:keybind({
+    name = "Toggle ESP",
+    def = nil,
+    callback = function() end,
+    onPressCallback = function()
+        espEnabled = not espEnabled
+        if not espEnabled then
+            removeESP()
+        end
+    end
+})
+
 settingsSection:keybind({
     name = "Toggle Menu Keybind",
     def = nil,
@@ -191,6 +278,12 @@ rs.Heartbeat:Connect(function(dt)
     
     if partFlyEnabled then
         updateFlyMovement(dt)
+    end
+
+    if espEnabled then
+        updateESP()
+    else
+        removeESP()
     end
 end)
 
