@@ -22,22 +22,16 @@ local walkSpeedMultiplier = defaultMultiplier
 local partFlyEnabled = false
 local partFlySpeed = 10
 local moveDirection = Vector3.new(0, 0, 0)
+local safetyPart = nil
 
--- Create the safety part
-local safetyPart = Instance.new("Part")
-safetyPart.Size = Vector3.new(2, 0.5, 2)
-safetyPart.Anchored = true
-safetyPart.CanCollide = true
-safetyPart.Transparency = 0.5
-safetyPart.BrickColor = BrickColor.new("Bright blue")
-safetyPart.Name = "SafetyPart"
-safetyPart.Parent = workspace
+local partFolder = Instance.new("Folder")
+partFolder.Name = "PartFolder"
+partFolder.Parent = workspace
 
--- Improved flying logic
+-- Improved flying logic with smooth movement and anti-fling
 local function updateFlyMovement(dt)
-    if not partFlyEnabled then return end
+    if not partFlyEnabled or not safetyPart then return end
     
-    -- Get input for all directions
     local newMoveDirection = Vector3.new(0, 0, 0)
     
     -- Vertical movement
@@ -51,61 +45,83 @@ local function updateFlyMovement(dt)
     -- Horizontal movement based on camera
     local camera = workspace.CurrentCamera
     if camera then
-        if uis:IsKeyDown(Enum.KeyCode.W) or uis:IsKeyDown(Enum.KeyCode.S) or 
-           uis:IsKeyDown(Enum.KeyCode.A) or uis:IsKeyDown(Enum.KeyCode.D) then
-            local lookVector = camera.CFrame.LookVector
-            local rightVector = camera.CFrame.RightVector
-            
-            if uis:IsKeyDown(Enum.KeyCode.W) then
-                newMoveDirection = newMoveDirection + Vector3.new(lookVector.X, 0, lookVector.Z)
-            end
-            if uis:IsKeyDown(Enum.KeyCode.S) then
-                newMoveDirection = newMoveDirection - Vector3.new(lookVector.X, 0, lookVector.Z)
-            end
-            if uis:IsKeyDown(Enum.KeyCode.A) then
-                newMoveDirection = newMoveDirection - rightVector
-            end
-            if uis:IsKeyDown(Enum.KeyCode.D) then
-                newMoveDirection = newMoveDirection + rightVector
-            end
+        local lookVector = camera.CFrame.LookVector
+        local rightVector = camera.CFrame.RightVector
+        
+        if uis:IsKeyDown(Enum.KeyCode.W) then
+            newMoveDirection = newMoveDirection + Vector3.new(lookVector.X, 0, lookVector.Z)
+        end
+        if uis:IsKeyDown(Enum.KeyCode.S) then
+            newMoveDirection = newMoveDirection - Vector3.new(lookVector.X, 0, lookVector.Z)
+        end
+        if uis:IsKeyDown(Enum.KeyCode.A) then
+            newMoveDirection = newMoveDirection - rightVector
+        end
+        if uis:IsKeyDown(Enum.KeyCode.D) then
+            newMoveDirection = newMoveDirection + rightVector
         end
     end
     
-    -- Normalize and apply speed
+    -- Normalize and apply speed with smoothing
     if newMoveDirection.Magnitude > 0 then
         newMoveDirection = newMoveDirection.Unit * partFlySpeed
     end
     
-    -- Update position of both the safety part and the player
-    safetyPart.Position = safetyPart.Position + (newMoveDirection * dt)
-    hrp.CFrame = CFrame.new(safetyPart.Position + Vector3.new(0, 3, 0)) -- Offset to keep player above part
+    -- Update position with interpolation to prevent sudden movements
+    local targetPosition = safetyPart.Position + (newMoveDirection * dt)
+    safetyPart.Position = safetyPart.Position:Lerp(targetPosition, 0.5)
+    
+    -- Update character position with offset and orientation
+    local targetCFrame = CFrame.new(safetyPart.Position + Vector3.new(0, 3, 0))
+    hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.5)
+    
+    -- Prevent velocity-based flinging
+    hrp.Velocity = Vector3.new(0, 0, 0)
+    hrp.RotVelocity = Vector3.new(0, 0, 0)
 end
 
--- Toggle flying
 local function startPartFly()
-    safetyPart.CanCollide = true
+    if safetyPart then return end
+    
+    safetyPart = Instance.new("Part")
+    safetyPart.Size = Vector3.new(2, 0.5, 2)
+    safetyPart.Anchored = true
+    safetyPart.CanCollide = false  -- Changed to false to prevent bouncing
+    safetyPart.Transparency = 0.5
+    safetyPart.BrickColor = BrickColor.new("Bright blue")
+    safetyPart.Name = "SafetyPart"
+    safetyPart.Parent = partFolder
+
     partFlyEnabled = true
     humanoid:ChangeState(Enum.HumanoidStateType.Physics)
     humanoid.JumpHeight = 0
     
-    -- Initialize position
-    safetyPart.Position = hrp.Position - Vector3.new(0, 3, 0)
+    -- Initialize position smoothly
+    safetyPart.Position = hrp.Position - Vector3.new(0, 3.25, 0)
     
-    -- Disable character physics
+    -- Modified physics properties to reduce flinging
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            part.CustomPhysicalProperties = PhysicalProperties.new(0.1, 0, 0, 0, 0)
         end
     end
 end
 
 local function stopPartFly()
-    safetyPart.CanCollide = false
+    if safetyPart then
+        safetyPart:Destroy()
+        safetyPart = nil
+    end
+    partFolder:ClearAllChildren()
     partFlyEnabled = false
+    
+    -- Smooth transition when stopping flight
+    humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+    task.wait(0.1)
     humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     humanoid.JumpHeight = defaultJumpHeight
     
-    -- Restore character physics
+    -- Restore default physics properties
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
@@ -113,7 +129,7 @@ local function stopPartFly()
     end
 end
 
--- UI elements
+-- UI elements (same as before)
 generalSection:keybind({
     name = "Speed Keybind",
     def = nil,
@@ -184,8 +200,9 @@ player.CharacterAdded:Connect(function(character)
     hrp = char:WaitForChild("HumanoidRootPart")
     humanoid = char:WaitForChild("Humanoid")
     
-    -- Reset flying state if it was enabled
     if partFlyEnabled then
         stopPartFly()
+        task.wait(0.5)  -- Wait for character to fully load
+        startPartFly()
     end
 end)
