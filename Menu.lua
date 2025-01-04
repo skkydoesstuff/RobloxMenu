@@ -161,7 +161,7 @@ local function updateESP()
                 textLabel.BackgroundTransparency = 1
                 textLabel.Text = v.Name  -- You can change this to display different text
                 textLabel.TextColor3 = Color3.new(1, 1, 1)  -- White text
-                textLabel.TextScaled = true
+                textLabel.TextScaled = true  -- Automatically scales the text size
                 textLabel.Font = Enum.Font.GothamBold
                 textLabel.Parent = billboardGui
                 
@@ -174,6 +174,7 @@ local function updateESP()
         end
     end
 end
+
 
 local function removeESP(playerToRemove)
     if playerToRemove then
@@ -298,4 +299,11 @@ player.CharacterAdded:Connect(function(character)
         task.wait(0.5)  -- Wait for character to fully load
         startPartFly()
     end
+end)
+
+players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function(char)
+        -- Re-create ESP when player respawns
+        updateESP()
+    end)
 end)
