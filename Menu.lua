@@ -10,8 +10,8 @@ local generalSection = tab:section({name = "General", side = "left", size = 250}
 local settingsSection = tab:section({name = "Settings", side = "right", size = 250})
 
 local players = game:GetService("Players")
-local player = game.Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
+local localPlayer = game.Players.LocalPlayer
+local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local humanoid = char:WaitForChild("Humanoid")
 
@@ -31,7 +31,52 @@ local partFolder = Instance.new("Folder")
 partFolder.Name = "PartFolder"
 partFolder.Parent = workspace
 
--- Improved flying logic with smooth movement and anti-fling
+local AimbotEnabled = false
+local AimbotFOV = 100 -- radius in pixels
+local AimbotKey = Enum.KeyCode.E
+local AimPart = "Head" -- part to aim at
+
+-- Create the FOV circle
+local fovCircle = Drawing.new("Circle")
+fovCircle.Color = Color3.fromRGB(225, 58, 81)
+fovCircle.Thickness = 1
+fovCircle.Radius = AimbotFOV
+fovCircle.Transparency = 0.6
+fovCircle.Filled = false
+fovCircle.Visible = true
+
+local Mouse = localPlayer:GetMouse()
+
+local function GetClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = AimbotFOV
+
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild(AimPart) then
+            local part = player.Character[AimPart]
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(part.Position)
+            
+            -- make sure it's on screen and screenPos is valid
+            if onScreen and screenPos then
+                local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+                local targetPos = Vector2.new(screenPos.X, screenPos.Y)
+                local distance = (mousePos - targetPos).Magnitude
+
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+
+        fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y)
+        fovCircle.Radius = AimbotFOV
+        fovCircle.Visible = AimbotEnabled
+    end
+
+    return closestPlayer
+end
+
 local function updateFlyMovement(dt)
     if not partFlyEnabled or not safetyPart then return end
     
@@ -289,7 +334,7 @@ rs.Heartbeat:Connect(function(dt)
 end)
 
 -- Character respawn handling
-player.CharacterAdded:Connect(function(character)
+localPlayer.CharacterAdded:Connect(function(character)
     char = character
     hrp = char:WaitForChild("HumanoidRootPart")
     humanoid = char:WaitForChild("Humanoid")
@@ -307,3 +352,66 @@ players.PlayerAdded:Connect(function(plr)
         updateESP()
     end)
 end)
+
+generalSection:keybind({
+    name = "Aim Lock Keybind",
+    def = nil,
+    callback = function() end,
+    onPressCallback = function()
+        AimbotEnabled = not AimbotEnabled
+    end
+})
+
+generalSection:slider({
+    name = "Aim Lock FOV",
+    def = 100,
+    min = 0,
+    max = 1000,
+    callback = function(value)
+        AimbotFOV = value
+    end
+})
+
+generalSection:dropdown({
+    name = "Aim Lock Part",
+    def = "Head", -- default selected option
+    max = 3, -- max visible options before scrolling
+    options = {"Head", "HumanoidRootPart", "Torso"},
+    callback = function(selected)
+        AimPart = selected
+    end
+})
+
+-- Variable to track if the right mouse button is being held
+local isRightClicking = false
+
+-- Detect when right-click is pressed or released
+uis.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right click
+        isRightClicking = true
+    end
+end)
+
+uis.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right click
+        isRightClicking = false
+    end
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    -- Update FOV circle position based on mouse position
+    fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + (AimbotFOV/2))
+    fovCircle.Radius = AimbotFOV
+    fovCircle.Visible = AimbotEnabled
+
+    if AimbotEnabled and isRightClicking then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild(AimPart) then
+            workspace.CurrentCamera.CFrame = CFrame.new(
+                workspace.CurrentCamera.CFrame.Position,
+                target.Character[AimPart].Position
+            )
+        end
+    end
+end)
+
