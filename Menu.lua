@@ -1,3 +1,5 @@
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/skkydoesstuff/RobloxMenu/main/Menu.lua"))()
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/skkydoesstuff/RobloxMenu/refs/heads/main/SplixCustom.lua"))()
 local rs = game:GetService("RunService")
 local uis = game:GetService("UserInputService")
