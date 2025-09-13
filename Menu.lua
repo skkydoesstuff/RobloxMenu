@@ -11,6 +11,8 @@ local tab = window:page({name = "YES2"})
 local generalSection = tab:section({name = "General", side = "left", size = 250})
 local settingsSection = tab:section({name = "Settings", side = "right", size = 250})
 
+local windowFocused = true
+
 local players = game:GetService("Players")
 local localPlayer = game.Players.LocalPlayer
 local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
@@ -38,6 +40,8 @@ local AimbotFOV = 100 -- radius in pixels
 local AimbotKey = Enum.KeyCode.E
 local AimPart = "Head" -- part to aim at
 
+local espObjects = {} -- map: player -> {box = Drawing, outline = Drawing}
+
 -- Create the FOV circle
 local fovCircle = Drawing.new("Circle")
 fovCircle.Color = Color3.fromRGB(225, 58, 81)
@@ -48,6 +52,23 @@ fovCircle.Filled = false
 fovCircle.Visible = true
 
 local Mouse = localPlayer:GetMouse()
+
+uis.WindowFocusReleased:Connect(function()
+    windowFocused = false
+    -- Hide all ESP when window loses focus
+    if espEnabled then
+        for player, esp in pairs(espObjects) do
+            if esp.box then esp.box.Visible = false end
+            if esp.outline then esp.outline.Visible = false end
+        end
+    end
+    -- Also hide FOV circle
+    fovCircle.Visible = false
+end)
+
+uis.WindowFocused:Connect(function()
+    windowFocused = true
+end)
 
 local function GetClosestPlayer()
     local closestPlayer = nil
@@ -157,8 +178,6 @@ local function startPartFly()
     end
 end
 
-local espObjects = {}
-
 local function stopPartFly()
     if safetyPart then
         safetyPart:Destroy()
@@ -181,76 +200,108 @@ local function stopPartFly()
     end
 end
 
+
+local function createBoxForPlayer(p)
+    if espObjects[p] then return end
+
+    local boxOutline = Drawing.new("Square")
+    boxOutline.Visible = false
+    boxOutline.Color = Color3.new(0,0,0)
+    boxOutline.Thickness = 3
+    boxOutline.Transparency = 1
+    boxOutline.Filled = false
+
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Color3.fromRGB(255,255,255)
+    box.Thickness = 1
+    box.Transparency = 1
+    box.Filled = false
+
+    espObjects[p] = {box = box, outline = boxOutline}
+end
+
 local function updateESP()
-    for i, v in pairs(players:GetChildren()) do
-        if v.Character and v.Character:FindFirstChild("Head") then
-            if not espObjects[v] then
-                -- Create the Highlight
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "ESP"
-                highlight.Parent = v.Character
-                highlight.Adornee = v.Character
-                highlight.FillTransparency = 0.5  -- You can adjust transparency if needed
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- Color of the highlight
-                
-                -- Create the BillboardGui
-                local billboardGui = Instance.new("BillboardGui")
-                billboardGui.Name = "PlayerLabel"
-                billboardGui.Size = UDim2.new(0, 200, 0, 50)  -- Adjust size as needed
-                billboardGui.StudsOffset = Vector3.new(0, 2, 0)  -- Adjust height above head
-                billboardGui.Adornee = v.Character:WaitForChild("Head")
-                billboardGui.AlwaysOnTop = true
-                
-                -- Create the TextLabel
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Name = "Label"
-                textLabel.Size = UDim2.new(1, 0, 1, 0)
-                textLabel.BackgroundTransparency = 1
-                textLabel.Text = v.Name  -- You can change this to display different text
-                textLabel.TextColor3 = Color3.new(1, 1, 1)  -- White text
-                textLabel.TextScaled = true  -- Automatically scales the text size
-                textLabel.Font = Enum.Font.GothamBold
-                textLabel.Parent = billboardGui
-                
-                -- Parent the BillboardGui to the Player's Head
-                billboardGui.Parent = v.Character:WaitForChild("Head")
-                
-                -- Store the ESP objects to prevent recreating them
-                espObjects[v] = {highlight = highlight, billboardGui = billboardGui}
+    -- Don't update ESP if window isn't focused
+    if not windowFocused then return end
+    
+    local camera = workspace.CurrentCamera
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= localPlayer and p.Character and p.Character.Parent and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") then
+            if not espObjects[p] then
+                createBoxForPlayer(p)
+            end
+
+            local objs = espObjects[p]
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local head = p.Character:FindFirstChild("Head")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+            if hrp and head and hum and hum.Health > 0 then
+                local hrpPos, hrpOn = camera:WorldToViewportPoint(hrp.Position)
+                local headPos, headOn = camera:WorldToViewportPoint(head.Position + Vector3.new(0,0.5,0))
+                local legPos, legOn = camera:WorldToViewportPoint(hrp.Position - Vector3.new(0,3,0))
+
+                if hrpOn and headOn and headPos and legPos then
+                    local height = math.abs(legPos.Y - headPos.Y)
+                    if height < 1 then height = 1 end
+                    local width = height / 2
+
+                    objs.outline.Size = Vector2.new(width, height)
+                    objs.outline.Position = Vector2.new(hrpPos.X - width/2, headPos.Y)
+                    objs.outline.Visible = espEnabled -- Only show if ESP is enabled
+
+                    objs.box.Size = Vector2.new(width, height)
+                    objs.box.Position = Vector2.new(hrpPos.X - width/2, headPos.Y)
+                    objs.box.Visible = espEnabled -- Only show if ESP is enabled
+                else
+                    objs.outline.Visible = false
+                    objs.box.Visible = false
+                end
+            else
+                if objs then
+                    objs.outline.Visible = false
+                    objs.box.Visible = false
+                end
+            end
+        else
+            if espObjects[p] then
+                if espObjects[p].box then espObjects[p].box:Remove() end
+                if espObjects[p].outline then espObjects[p].outline:Remove() end
+                espObjects[p] = nil
             end
         end
     end
 end
 
-
 local function removeESP(playerToRemove)
     if playerToRemove then
-        -- Remove ESP for the specific player
         local esp = espObjects[playerToRemove]
         if esp then
-            -- Destroy the Highlight and BillboardGui
-            if esp.highlight then
-                esp.highlight:Destroy()
-            end
-            if esp.billboardGui then
-                esp.billboardGui:Destroy()
-            end
-            -- Remove the player from espObjects table
+            if esp.box then esp.box:Remove() end
+            if esp.outline then esp.outline:Remove() end
             espObjects[playerToRemove] = nil
         end
     else
-        -- Remove ESP for all players
         for player, esp in pairs(espObjects) do
-            if esp.highlight then
-                esp.highlight:Destroy()
-            end
-            if esp.billboardGui then
-                esp.billboardGui:Destroy()
-            end
+            if esp.box then esp.box:Remove() end
+            if esp.outline then esp.outline:Remove() end
             espObjects[player] = nil
         end
     end
 end
+
+-- cleanup when a player leaves
+players.PlayerRemoving:Connect(function(p)
+    removeESP(p)
+end)
+
+-- ensure ESP removed when their character dies or is removed
+players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        -- let updateESP recreate when enabled; nothing to do here
+    end)
+end)
 
 -- UI elements (same as before)
 generalSection:keybind({
@@ -331,6 +382,7 @@ rs.Heartbeat:Connect(function(dt)
     if espEnabled then
         updateESP()
     else
+        -- ensure any leftover drawings are removed
         removeESP()
     end
 end)
@@ -346,13 +398,6 @@ localPlayer.CharacterAdded:Connect(function(character)
         task.wait(0.5)  -- Wait for character to fully load
         startPartFly()
     end
-end)
-
-players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function(char)
-        -- Re-create ESP when player respawns
-        updateESP()
-    end)
 end)
 
 generalSection:keybind({
@@ -401,12 +446,12 @@ uis.InputEnded:Connect(function(input)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-    -- Update FOV circle position based on mouse position
+    -- Only show FOV circle if window is focused
     fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y + (AimbotFOV/2))
     fovCircle.Radius = AimbotFOV
-    fovCircle.Visible = AimbotEnabled
+    fovCircle.Visible = AimbotEnabled and windowFocused
 
-    if AimbotEnabled and isRightClicking then
+    if AimbotEnabled and isRightClicking and windowFocused then
         local target = GetClosestPlayer()
         if target and target.Character and target.Character:FindFirstChild(AimPart) then
             workspace.CurrentCamera.CFrame = CFrame.new(
@@ -416,4 +461,3 @@ game:GetService("RunService").RenderStepped:Connect(function()
         end
     end
 end)
-
