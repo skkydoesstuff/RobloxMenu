@@ -39,6 +39,7 @@ local AimbotEnabled = false
 local AimbotFOV = 100 -- radius in pixels
 local AimbotKey = Enum.KeyCode.E
 local AimPart = "Head" -- part to aim at
+local lockedTarget = nil
 
 local espObjects = {} -- map: player -> {box = Drawing, outline = Drawing}
 
@@ -71,6 +72,20 @@ uis.WindowFocused:Connect(function()
 end)
 
 local function GetClosestPlayer()
+    -- If we already locked a target, validate and keep it if still valid
+    if lockedTarget then
+        local p = lockedTarget
+        if p and p.Character and p.Character.Parent and p.Character:FindFirstChild(AimPart) then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                return p
+            end
+        end
+        -- target invalid -> clear lock
+        lockedTarget = nil
+    end
+
+    -- Not locked yet: search for closest within FOV and lock the first suitable player
     local closestPlayer = nil
     local shortestDistance = AimbotFOV
 
@@ -78,8 +93,7 @@ local function GetClosestPlayer()
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild(AimPart) then
             local part = player.Character[AimPart]
             local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(part.Position)
-            
-            -- make sure it's on screen and screenPos is valid
+
             if onScreen and screenPos then
                 local mousePos = Vector2.new(Mouse.X, Mouse.Y)
                 local targetPos = Vector2.new(screenPos.X, screenPos.Y)
@@ -91,13 +105,15 @@ local function GetClosestPlayer()
                 end
             end
         end
-
-        fovCircle.Position = Vector2.new(Mouse.X, Mouse.Y)
-        fovCircle.Radius = AimbotFOV
-        fovCircle.Visible = AimbotEnabled
     end
 
-    return closestPlayer
+    -- If we found someone, lock onto them and return
+    if closestPlayer then
+        lockedTarget = closestPlayer
+        return closestPlayer
+    end
+
+    return nil
 end
 
 local function updateFlyMovement(dt)
@@ -206,7 +222,7 @@ local function createBoxForPlayer(p)
 
     local boxOutline = Drawing.new("Square")
     boxOutline.Visible = false
-    boxOutline.Color = Color3.new(0,0,0)
+    boxOutline.Color = Color3.new(255,0,0)
     boxOutline.Thickness = 3
     boxOutline.Transparency = 1
     boxOutline.Filled = false
@@ -293,6 +309,9 @@ end
 
 -- cleanup when a player leaves
 players.PlayerRemoving:Connect(function(p)
+    if lockedTarget == p then
+        lockedTarget = nil
+    end
     removeESP(p)
 end)
 
@@ -406,6 +425,11 @@ generalSection:keybind({
     callback = function() end,
     onPressCallback = function()
         AimbotEnabled = not AimbotEnabled
+        if not AimbotEnabled then
+            -- clear the lock when disabling aimbot
+            lockedTarget = nil
+            fovCircle.Visible = false
+        end
     end
 })
 
@@ -442,6 +466,7 @@ end)
 uis.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then -- Right click
         isRightClicking = false
+        if lockedTarget ~= nil then lockedTarget = nil end
     end
 end)
 
